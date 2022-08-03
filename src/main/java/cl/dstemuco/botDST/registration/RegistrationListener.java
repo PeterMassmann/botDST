@@ -10,13 +10,22 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import org.jetbrains.annotations.NotNull;
+import org.spongepowered.configurate.CommentedConfigurationNode;
+import org.spongepowered.configurate.ConfigurateException;
+import org.spongepowered.configurate.loader.ConfigurationLoader;
+import org.spongepowered.configurate.serialize.SerializationException;
+import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.security.auth.login.Configuration;
 import java.awt.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class RegistrationListener extends ListenerAdapter {
@@ -38,6 +47,7 @@ public class RegistrationListener extends ListenerAdapter {
     private final Role sexto;
     private final Role quinto;
 
+    private final CommentedConfigurationNode root;
 
     public RegistrationListener(JDA bot) {
         unverified = bot.getRoleById(950774251881902200L);
@@ -52,17 +62,23 @@ public class RegistrationListener extends ListenerAdapter {
         septimo = bot.getRoleById(949196899347484733L);
         sexto = bot.getRoleById(949197023821836348L);
         quinto = bot.getRoleById(949195739869896715L);
+        final YamlConfigurationLoader loader = YamlConfigurationLoader.builder().path(Paths.get("data/alumnosPorCurso.yml")).build();
+        try {
+            root = loader.load();
+        } catch (ConfigurateException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public void onMessageReceived(MessageReceivedEvent event) {
+    public void onMessageReceived(@NotNull MessageReceivedEvent event) {
         if (event.getTextChannel().getId().equals("948885571282030592") && !event.getMessage().getAuthor().getId().equals("971906101392072755")) {
             event.getMessage().delete().queue();
         }
     }
 
     @Override
-    public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
+    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
         if (event.getName().equals("verificar")) {
             String correo = event.getOption("correo").getAsString();
 
@@ -80,7 +96,7 @@ public class RegistrationListener extends ListenerAdapter {
                     return;
                 }
 
-                if (usuarios.containsValue(event.getUser())) {
+                if (usuarios.containsValue(event.getUser().getId())) {
                     event.replyEmbeds(
                             new EmbedBuilder()
                                     .setColor(Color.RED)
@@ -184,19 +200,50 @@ public class RegistrationListener extends ListenerAdapter {
                         Member member = event.getMember();
                         Guild guild = event.getGuild();
 
+                        if (member == null || guild == null) {
+                            return;
+                        }
+
                         guild.addRoleToMember(member, verified).queue();
                         guild.removeRoleFromMember(member, unverified).queue();
                         guild.addRoleToMember(member, (correo.contains("@alumnosdstemuco.cl") ? alumno : profesor)).queue();
-
-                        // TODO ADD CLASS ROLES
-                        guild.addRoleToMember(member, cuarto).queue();
 
                         // NICKNAME
                         if (correo.contains("alumnosdstemuco.cl")) {
                             String nombre = correo.split("@")[0].split("\\.")[0];
                             String apellido = correo.split("@")[0].split("\\.")[1];
 
-                            guild.modifyNickname(member, nombre.substring(0,1).toUpperCase() + nombre.substring(1) + " " + apellido.substring(0,1).toUpperCase() + apellido.substring(1)).queue();
+                            String name = nombre.substring(0, 1).toUpperCase() + nombre.substring(1) + " " + apellido.substring(0, 1).toUpperCase() + apellido.substring(1);
+                            guild.modifyNickname(member, name).queue();
+
+                            List<String> keys;
+                            try {
+                                keys = root.getList(String.class);
+                            } catch (SerializationException e) {
+                                throw new RuntimeException(e);
+                            }
+
+                            for (String key : keys) {
+
+                                CommentedConfigurationNode node = root.node(key);
+                                List<String> students;
+                                try {
+                                    students = node.getList(String.class);
+                                } catch (SerializationException e) {
+                                    throw new RuntimeException(e);
+                                }
+
+                                if (students.contains(name)) {
+
+                                    Role role = numberToRole(Integer.parseInt(key));
+
+                                    guild.addRoleToMember(member, role).queue();
+
+                                    break;
+                                }
+                            }
+
+                            guild.addRoleToMember(member, cuarto).queue();
                         } else {
                             String name = correo.split("@")[0];
 
@@ -246,10 +293,34 @@ public class RegistrationListener extends ListenerAdapter {
                 ).queue(
                         msg -> msg.deleteOriginal().queueAfter(10, TimeUnit.SECONDS)
                 );
+
             }
 
 
         }
+    }
+
+    private Role numberToRole(int number) {
+
+        switch (number) {
+            case 5:
+                return quinto;
+            case 6:
+                return sexto;
+            case 7:
+                return septimo;
+            case 8:
+                return octavo;
+            case 9:
+                return primero;
+            case 10:
+                return segundo;
+            case 11:
+                return tercero;
+            default:
+                return cuarto;
+        }
+
     }
 
 }
