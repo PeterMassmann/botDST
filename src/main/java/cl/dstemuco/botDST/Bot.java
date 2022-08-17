@@ -8,15 +8,35 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import org.spongepowered.configurate.CommentedConfigurationNode;
+import org.spongepowered.configurate.ConfigurateException;
+import org.spongepowered.configurate.serialize.SerializationException;
+import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import javax.security.auth.login.LoginException;
+import java.nio.file.Paths;
 
 public class Bot {
     public static JDA bot;
 
     public static void main(String[] args) {
 
-        JDABuilder builder = JDABuilder.createDefault("OTcxOTA2MTAxMzkyMDcyNzU1.GjbwNv.S3ORiCoUg99KOlxhDpWeDCGiHhY2UQ6cfAhhrc");
+        YamlConfigurationLoader loader = YamlConfigurationLoader.builder().path(Paths.get("toke.yml")).build();
+        CommentedConfigurationNode node;
+        try {
+            node = loader.load().node("token");
+        } catch (ConfigurateException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        JDABuilder builder;
+        try {
+            builder = JDABuilder.createDefault(node.get(String.class));
+        } catch (SerializationException e) {
+            e.printStackTrace();
+            return;
+        }
         builder.enableIntents(GatewayIntent.DIRECT_MESSAGES);
         builder.setStatus(OnlineStatus.ONLINE);
         builder.setActivity(Activity.playing("Estudiando..."));
