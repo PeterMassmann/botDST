@@ -1,5 +1,6 @@
 package cl.dstemuco.botDST;
 
+import cl.dstemuco.botDST.events.Join;
 import cl.dstemuco.botDST.registration.RegistrationListener;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -44,7 +45,8 @@ public class Bot {
             System.out.println("Bot iniciado correctamente.");
 
             bot.addEventListener(
-                    new RegistrationListener(bot)
+                    new RegistrationListener(bot),
+                    new Join(bot)
             );
             /*
 
