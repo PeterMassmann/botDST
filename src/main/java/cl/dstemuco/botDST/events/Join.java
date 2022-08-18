@@ -26,7 +26,7 @@ public class Join extends ListenerAdapter {
         // TODO SEND WELCOME MESSAGE
 
         event.getUser().openPrivateChannel().queue(
-                channel -> channel.sendMessage("**¡Bienvenid@ al servidor de Discord del Colegio Alemán de Temuco!**\n\nPara obtener acceso a los canales, usa `/verificar <correo institucional>` en <#948885571282030592>. Luego introduce el código que se te enviará a tu correo en el comando `/codigo <código>.`").queue());
+                channel -> channel.sendMessage("**¡Bienvenid@ al servidor de Discord del Colegio Alemán de Temuco!**\n\nPara obtener acceso a los canales, usa `/verificar <correo institucional>` en <#948885571282030592>. Luego introduce el código que se te enviará a tu correo en el comando `/codigo <código>.`").queue()
         );
 
     }
