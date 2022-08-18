@@ -5,8 +5,6 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
@@ -21,7 +19,7 @@ public class Bot {
 
     public static void main(String[] args) {
 
-        YamlConfigurationLoader loader = YamlConfigurationLoader.builder().path(Paths.get("toke.yml")).build();
+        YamlConfigurationLoader loader = YamlConfigurationLoader.builder().path(Paths.get("token.yml")).build();
         CommentedConfigurationNode node;
         try {
             node = loader.load().node("token");

@@ -13,8 +13,11 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
+import org.spongepowered.configurate.ConfigurationVisitor;
 import org.spongepowered.configurate.loader.ConfigurationLoader;
 import org.spongepowered.configurate.serialize.SerializationException;
+import org.spongepowered.configurate.serialize.TypeSerializer;
+import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import javax.mail.*;
@@ -49,7 +52,7 @@ public class RegistrationListener extends ListenerAdapter {
 
     private final CommentedConfigurationNode root;
 
-    public RegistrationListener(JDA bot) {
+    public RegistrationListener(@NotNull JDA bot) {
         unverified = bot.getRoleById(950774251881902200L);
         verified = bot.getRoleById(950774355581865985L);
         profesor = bot.getRoleById(949194667524763699L);
@@ -80,7 +83,7 @@ public class RegistrationListener extends ListenerAdapter {
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
         if (event.getName().equals("verificar")) {
-            String correo = event.getOption("correo").getAsString();
+            String correo = event.getOption("correo").getAsString().toLowerCase();
 
             if (correo.matches("([a-zñ]{1,100}\\.[a-zñ]{1,100}@alumnosdstemuco\\.cl)|([a-zñ]{1,100}@dstemuco\\.cl)")) {
 
@@ -120,7 +123,7 @@ public class RegistrationListener extends ListenerAdapter {
                 Session session = Session.getInstance(properties, new Authenticator() {
 
                     protected PasswordAuthentication getPasswordAuthentication() {
-                        return new PasswordAuthentication(from, "POLERONCHISPITA");
+                        return new PasswordAuthentication(from, "vlvhkcqolmmpoghu");
                     }
                 });
 
@@ -204,8 +207,8 @@ public class RegistrationListener extends ListenerAdapter {
                             return;
                         }
 
-                        guild.addRoleToMember(member, verified).queue();
                         guild.removeRoleFromMember(member, unverified).queue();
+                        guild.addRoleToMember(member, verified).queue();
                         guild.addRoleToMember(member, (correo.contains("@alumnosdstemuco.cl") ? alumno : profesor)).queue();
 
                         // NICKNAME
@@ -216,11 +219,13 @@ public class RegistrationListener extends ListenerAdapter {
                             String name = nombre.substring(0, 1).toUpperCase() + nombre.substring(1) + " " + apellido.substring(0, 1).toUpperCase() + apellido.substring(1);
                             guild.modifyNickname(member, name).queue();
 
-                            List<String> keys;
-                            try {
-                                keys = root.getList(String.class);
-                            } catch (SerializationException e) {
-                                throw new RuntimeException(e);
+                            Map<Object, CommentedConfigurationNode> map;
+
+                            List<String> keys = new ArrayList<>();
+                            map = root.childrenMap();
+
+                            for (Object key : map.keySet()) {
+                                keys.add(key.toString());
                             }
 
                             for (String key : keys) {
@@ -242,8 +247,6 @@ public class RegistrationListener extends ListenerAdapter {
                                     break;
                                 }
                             }
-
-                            guild.addRoleToMember(member, cuarto).queue();
                         } else {
                             String name = correo.split("@")[0];
 
