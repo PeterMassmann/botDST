@@ -44,6 +44,16 @@ public class Bot {
             bot = builder.build().awaitReady();
             System.out.println("Bot iniciado correctamente.");
 
+            if (args.length > 0) {
+                if (args[0].equals("shut")) {
+
+                    bot.shutdown();
+                    System.out.println("Bot apagado correctamente.");
+                    return;
+
+                }
+            }
+
             bot.addEventListener(
                     new RegistrationListener(bot),
                     new Join(bot)

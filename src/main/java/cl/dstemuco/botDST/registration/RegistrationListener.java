@@ -6,29 +6,20 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
-import org.spongepowered.configurate.ConfigurationVisitor;
-import org.spongepowered.configurate.loader.ConfigurationLoader;
-import org.spongepowered.configurate.serialize.SerializationException;
-import org.spongepowered.configurate.serialize.TypeSerializer;
-import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import javax.security.auth.login.Configuration;
 import java.awt.*;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class RegistrationListener extends ListenerAdapter {
@@ -65,7 +56,7 @@ public class RegistrationListener extends ListenerAdapter {
         septimo = bot.getRoleById(949196899347484733L);
         sexto = bot.getRoleById(949197023821836348L);
         quinto = bot.getRoleById(949195739869896715L);
-        final YamlConfigurationLoader loader = YamlConfigurationLoader.builder().path(Paths.get("data/alumnosPorCurso.yml")).build();
+        final YamlConfigurationLoader loader = YamlConfigurationLoader.builder().path(Paths.get("data/nombresPorCorreo.yml")).build();
         try {
             root = loader.load();
         } catch (ConfigurateException e) {
@@ -75,7 +66,7 @@ public class RegistrationListener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
-        if (event.getTextChannel().getId().equals("948885571282030592") && !event.getMessage().getAuthor().getId().equals("971906101392072755")) {
+        if (event.getTextChannel().getId().equals("948885571282030592") && !event.getMessage().getAuthor().getId().equals("971906101392072755") && !event.getMessage().getAuthor().getId().equals("714847710745722915")) {
             event.getMessage().delete().queue();
         }
     }
@@ -170,7 +161,7 @@ public class RegistrationListener extends ListenerAdapter {
                     event.replyEmbeds(
                             new EmbedBuilder()
                                     .setColor(Color.GREEN)
-                                    .setTitle("Te hemos envíado un correo con tu código de verificación.")
+                                    .setTitle("Te hemos enviado un correo con tu código de verificación.")
                                     .build()
                     ).queue();
 
@@ -195,11 +186,6 @@ public class RegistrationListener extends ListenerAdapter {
                 if (correos.containsKey(code)) {
                     if (usuarios.get(code).equals(event.getUser().getId())) {
                         String correo = correos.get(code);
-
-
-
-                        // FORMAT
-
                         Member member = event.getMember();
                         Guild guild = event.getGuild();
 
@@ -207,47 +193,59 @@ public class RegistrationListener extends ListenerAdapter {
                             return;
                         }
 
-                        guild.removeRoleFromMember(member, unverified).queue();
-                        guild.addRoleToMember(member, verified).queue();
-                        guild.addRoleToMember(member, (correo.contains("@alumnosdstemuco.cl") ? alumno : profesor)).queue();
-
                         // NICKNAME
                         if (correo.contains("alumnosdstemuco.cl")) {
-                            String nombre = correo.split("@")[0].split("\\.")[0];
-                            String apellido = correo.split("@")[0].split("\\.")[1];
 
-                            String name = nombre.substring(0, 1).toUpperCase() + nombre.substring(1) + " " + apellido.substring(0, 1).toUpperCase() + apellido.substring(1);
-                            guild.modifyNickname(member, name).queue();
+                            String nameToSearch = correo.split("@")[0].replace(".", "_");
 
-                            Map<Object, CommentedConfigurationNode> map;
+                            Map<String, Map<String, String>> map = getMapFromNode(root);
 
-                            List<String> keys = new ArrayList<>();
-                            map = root.childrenMap();
+                            boolean found = false;
 
-                            for (Object key : map.keySet()) {
-                                keys.add(key.toString());
-                            }
 
-                            for (String key : keys) {
+                            for (Map.Entry<String, Map<String, String>> curso : map.entrySet()) {
 
-                                CommentedConfigurationNode node = root.node(key);
-                                List<String> students;
-                                try {
-                                    students = node.getList(String.class);
-                                } catch (SerializationException e) {
-                                    throw new RuntimeException(e);
+
+                                Map<String, String> correos = curso.getValue();
+
+                                if (correos.containsKey(nameToSearch)) {
+
+                                    found = true;
+
+                                    String nombre = correos.get(nameToSearch);
+
+                                    guild.modifyNickname(member, nombre).queue();
+
+                                    guild.removeRoleFromMember(member, unverified).queue();
+                                    guild.addRoleToMember(member, verified).queue();
+                                    guild.addRoleToMember(member, alumno).queue();
+
+                                    guild.addRoleToMember(member, numberToRole(Integer.parseInt(curso.getKey()))).queue();
+
+                                    this.correos.remove(code);
+                                    usuarios.remove(code);
+
                                 }
 
-                                if (students.contains(name)) {
-
-                                    Role role = numberToRole(Integer.parseInt(key));
-
-                                    guild.addRoleToMember(member, role).queue();
-
-                                    break;
-                                }
                             }
+
+                            if (!found) {
+                                event.replyEmbeds(
+                                        new EmbedBuilder()
+                                                .setColor(Color.RED)
+                                                .setTitle("No se ha encontrado tu correo en la lista de nombres.")
+                                                .build()
+                                ).queue(
+                                        msg -> msg.deleteOriginal().queueAfter(10, TimeUnit.SECONDS)
+                                );
+                                correos.remove(code);
+                                usuarios.remove(code);
+                                return;
+                            }
+
+
                         } else {
+
                             String name = correo.split("@")[0];
 
                             String inicial = name.substring(0,1);
@@ -255,10 +253,14 @@ public class RegistrationListener extends ListenerAdapter {
                             String apellido = name.replaceFirst(inicial, "");
 
                             guild.modifyNickname(member, inicial.toUpperCase() + ". " + apellido.substring(0,1).toUpperCase() + apellido.substring(1)).queue();
-                        }
 
-                        correos.remove(code);
-                        usuarios.remove(code);
+                            guild.removeRoleFromMember(member, unverified).queue();
+                            guild.addRoleToMember(member, verified).queue();
+                            guild.addRoleToMember(member, profesor).queue();
+
+                            correos.remove(code);
+                            usuarios.remove(code);
+                        }
 
                         event.replyEmbeds(
                                 new EmbedBuilder()
@@ -323,6 +325,28 @@ public class RegistrationListener extends ListenerAdapter {
             default:
                 return cuarto;
         }
+
+    }
+
+    private @NotNull Map<String, Map<String, String>> getMapFromNode(@NotNull CommentedConfigurationNode node) {
+
+        Map<String, Map<String, String>> result = new HashMap<>();
+
+        for (Map.Entry<Object, CommentedConfigurationNode> first : node.childrenMap().entrySet()) {
+
+            Map<String, String> value = new HashMap<>();
+
+            for (Map.Entry<Object, CommentedConfigurationNode> second : first.getValue().childrenMap().entrySet()) {
+
+                value.put((String) second.getKey(), second.getValue().getString());
+
+            }
+
+            result.put((String) first.getKey(), value);
+
+        }
+
+        return result;
 
     }
 
