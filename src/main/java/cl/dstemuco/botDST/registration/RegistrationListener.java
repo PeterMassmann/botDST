@@ -107,9 +107,11 @@ public class RegistrationListener extends ListenerAdapter {
                 Properties properties = System.getProperties();
 
                 properties.put("mail.smtp.host", "smtp.gmail.com");
-                properties.put("mail.smtp.port", "465");
-                properties.put("mail.smtp.ssl.enable", "true");
+                properties.put("mail.smtp.port", "587");
                 properties.put("mail.smtp.auth", "true");
+                properties.put("mail.smtp.starttls.enable", "true");
+                properties.put("mail.smtp.starttls.required", "true");
+                properties.put("mail.smtp.ssl.protocols", "TLSv1.2");
 
                 Session session = Session.getInstance(properties, new Authenticator() {
 
@@ -201,7 +203,6 @@ public class RegistrationListener extends ListenerAdapter {
                             Map<String, Map<String, String>> map = getMapFromNode(root);
 
                             boolean found = false;
-
 
                             for (Map.Entry<String, Map<String, String>> curso : map.entrySet()) {
 
