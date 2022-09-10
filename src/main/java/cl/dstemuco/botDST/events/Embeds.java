@@ -31,7 +31,7 @@ public class Embeds extends ListenerAdapter {
 
                 builder.setColor(new Color(47, 49, 54));
 
-                TextChannel channel = bot.getTextChannelById("950779654879465472");
+                TextChannel channel = bot.getTextChannelById("948885571282030592");
 
                 switch (embedID) {
                     case "reglasImage":
@@ -65,6 +65,9 @@ public class Embeds extends ListenerAdapter {
                         builder.setTitle("|7| Sanciones:");
                         builder.setDescription("Cada mensaje enviado aquí quedará registrado incluso si este es eliminado. Todas las acciones tomadas acá podrán ser sancionadas por las autoridades correspondientes del Colegio.");
                         break;
+                    case "verify":
+                        builder.setTitle("Como registrarte en el servidor:");
+                        builder.setDescription("**1.** Usa `/verificar` junto con tu correo institucional del Colegio.\n**2.** Se te enviará un correo con un código.\n**3.** Usa `/codigo` junto con el código que recibiste.\n**4.** ¡Listo! Ya tienes acceso a todo el servidor.");
                 }
 
                 channel.sendMessageEmbeds(builder.build()).queue();

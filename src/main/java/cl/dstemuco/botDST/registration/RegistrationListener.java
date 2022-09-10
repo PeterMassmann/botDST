@@ -165,7 +165,9 @@ public class RegistrationListener extends ListenerAdapter {
                                     .setColor(Color.GREEN)
                                     .setTitle("Te hemos enviado un correo con tu código de verificación.")
                                     .build()
-                    ).queue();
+                    ).queue(
+                            msg -> msg.deleteOriginal().queueAfter(2, TimeUnit.MINUTES)
+                    );
 
                 } catch (MessagingException exception) {
                     exception.printStackTrace();
@@ -268,7 +270,9 @@ public class RegistrationListener extends ListenerAdapter {
                                         .setTitle("Cuenta verificada con éxito.")
                                         .setColor(Color.GREEN)
                                         .build()
-                        ).queue();
+                        ).queue(
+                                msg -> msg.deleteOriginal().queueAfter(2, TimeUnit.MINUTES)
+                        );
 
                     } else {
                         event.replyEmbeds(
